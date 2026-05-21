@@ -1716,6 +1716,8 @@ let currentScannerTarget = null; // 'list' or 'form'
 function setupScanner() {
   const btnScanBatteries = document.getElementById('btn-scan-batteries');
   const btnScannerClose = document.getElementById('btn-scanner-close');
+  const btnScannerFile = document.getElementById('btn-scanner-file');
+  const scannerFileInput = document.getElementById('scanner-file-input');
 
   if (btnScanBatteries) {
     btnScanBatteries.addEventListener('click', () => {
@@ -1734,6 +1736,47 @@ function setupScanner() {
   if (btnScannerClose) {
     btnScannerClose.addEventListener('click', closeScanner);
   }
+
+  if (btnScannerFile && scannerFileInput) {
+    btnScannerFile.addEventListener('click', () => {
+      scannerFileInput.click();
+    });
+
+    scannerFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!html5QrCode) {
+        if (typeof Html5Qrcode === 'undefined') {
+          showToast("La bibliothèque de scan charge...", "info");
+          return;
+        }
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      showToast("Analyse de l'image...", "info");
+
+      const stopPromise = (html5QrCode && html5QrCode.isScanning) 
+        ? html5QrCode.stop() 
+        : Promise.resolve();
+
+      stopPromise.then(() => {
+        html5QrCode.scanFile(file, false)
+          .then(decodedText => {
+            onScanSuccess(decodedText);
+          })
+          .catch(err => {
+            console.error("File scanning error", err);
+            showToast("Aucun code détecté sur cette photo. Ajustez la netteté et réessayez.", "error");
+          });
+      }).catch(err => {
+        console.error("Error stopping live stream for file scan", err);
+      });
+
+      // Clear selection so the same image can be re-selected if needed
+      scannerFileInput.value = "";
+    });
+  }
 }
 
 function openScanner(target) {
@@ -1750,12 +1793,27 @@ function openScanner(target) {
     html5QrCode = new Html5Qrcode("reader");
   }
 
-  const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-  html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-    .catch(err => {
-      showToast("Erreur caméra : autorisez l'accès à l'appareil photo.", "error");
-      closeScanner();
-    });
+  const config = { 
+    fps: 10, 
+    qrbox: (width, height) => {
+      const minEdge = Math.min(width, height);
+      const size = Math.floor(minEdge * 0.7);
+      return { width: size, height: size };
+    }
+  };
+
+  html5QrCode.start(
+    { facingMode: "environment" }, 
+    config, 
+    onScanSuccess, 
+    (errorMessage) => {
+      // Silent error callback for scanning failures (no code in view)
+    }
+  ).catch(err => {
+    console.error("Camera start error:", err);
+    showToast(`Caméra bloquée : ${err.message || err}. Utilisez l'option photo ci-dessous.`, "warning");
+    // Leave modal open so user can use the fallback photo/camera capture option
+  });
 }
 
 function closeScanner() {

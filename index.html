@@ -341,8 +341,15 @@
       
       <div class="scanner-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; pointer-events: none; z-index: 200;">
         <div class="scanner-target" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 30%; border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);"></div>
-        <p style="position: absolute; bottom: 80px; left: 0; right: 0; text-align: center; color: white; font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Placez le code-barres ou QR au centre.</p>
+        <p style="position: absolute; bottom: 100px; left: 0; right: 0; text-align: center; color: white; font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Placez le code-barres ou QR au centre.</p>
       </div>
+
+      <!-- File input fallback -->
+      <input type="file" id="scanner-file-input" accept="image/*" style="display: none;">
+      <button id="btn-scanner-file" class="btn" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 210; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 0.9rem; backdrop-filter: blur(10px); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; -webkit-tap-highlight-color: transparent;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        Prendre ou Choisir une photo
+      </button>
     </div>
   </dialog>
 
@@ -378,7 +385,7 @@
   </script>
   
   <!-- External Libraries -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 
   <!-- App Scripts -->
   <script src="db.js"></script>
