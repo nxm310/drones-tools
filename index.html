@@ -337,7 +337,9 @@
         <button id="btn-scanner-close" class="modal-close-btn" style="color: white; background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">&times;</button>
       </header>
       
-      <div id="reader" style="width: 100%; height: 100%; overflow: hidden; position: relative;"></div>
+      <div id="reader" style="width: 100%; height: 100%; overflow: hidden; position: relative;">
+        <video id="preview-video" style="width: 100%; height: 100%; object-fit: cover; background: #000; position: relative;" autoplay muted playsinline></video>
+      </div>
       
       <div class="scanner-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; pointer-events: none; z-index: 200;">
         <div class="scanner-target" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 30%; border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);"></div>
@@ -385,7 +387,7 @@
   </script>
   
   <!-- External Libraries -->
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 
   <!-- App Scripts -->
   <script src="db.js"></script>

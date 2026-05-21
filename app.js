@@ -1708,10 +1708,12 @@ function refreshDashboardStats() {
 }
 
 /* ==========================================================================
-   BARCODE SCANNER INTEGRATION (HTML5-QRCODE)
+   BARCODE & QR CODE SCANNER INTEGRATION (ZXING LIBRARY)
    ========================================================================== */
-let html5QrCode = null;
+let zxingReader = null;
+let zxingControls = null;
 let currentScannerTarget = null; // 'list' or 'form'
+let isScannerProcessing = false;
 
 function setupScanner() {
   const btnScanBatteries = document.getElementById('btn-scan-batteries');
@@ -1746,32 +1748,46 @@ function setupScanner() {
       const file = e.target.files[0];
       if (!file) return;
 
-      if (!html5QrCode) {
-        if (typeof Html5Qrcode === 'undefined') {
-          showToast("La bibliothèque de scan charge...", "info");
-          return;
-        }
-        html5QrCode = new Html5Qrcode("reader");
+      if (typeof ZXing === 'undefined') {
+        showToast("La bibliothèque de scan charge...", "info");
+        return;
+      }
+
+      if (!zxingReader) {
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.EAN_8,
+          ZXing.BarcodeFormat.CODE_128,
+          ZXing.BarcodeFormat.QR_CODE
+        ]);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        zxingReader = new ZXing.BrowserMultiFormatReader(hints, {
+          delayBetweenScanAttempts: 100
+        });
       }
 
       showToast("Analyse de l'image...", "info");
 
-      const stopPromise = (html5QrCode && html5QrCode.isScanning) 
-        ? html5QrCode.stop() 
-        : Promise.resolve();
+      // Stop video stream first if scanning
+      stopZxingCamera();
 
-      stopPromise.then(() => {
-        html5QrCode.scanFile(file, false)
-          .then(decodedText => {
-            onScanSuccess(decodedText);
-          })
-          .catch(err => {
-            console.error("File scanning error", err);
-            showToast("Aucun code détecté sur cette photo. Ajustez la netteté et réessayez.", "error");
-          });
-      }).catch(err => {
-        console.error("Error stopping live stream for file scan", err);
-      });
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          zxingReader.decodeFromImageElement(img)
+            .then(result => {
+              onScanSuccess(result.getText());
+            })
+            .catch(err => {
+              console.error("ZXing Image decoding error:", err);
+              showToast("Aucun code détecté sur cette photo. Ajustez la netteté et réessayez.", "error");
+            });
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
 
       // Clear selection so the same image can be re-selected if needed
       scannerFileInput.value = "";
@@ -1781,52 +1797,99 @@ function setupScanner() {
 
 function openScanner(target) {
   currentScannerTarget = target;
+  isScannerProcessing = false;
+  
   const modalScanner = document.getElementById('scanner-modal');
   modalScanner.showModal();
 
-  if (!html5QrCode) {
-    if (typeof Html5Qrcode === 'undefined') {
-      showToast("La bibliothèque de scan charge...", "info");
-      setTimeout(() => openScanner(target), 500);
-      return;
-    }
-    html5QrCode = new Html5Qrcode("reader");
+  if (typeof ZXing === 'undefined') {
+    showToast("La bibliothèque de scan charge...", "info");
+    setTimeout(() => openScanner(target), 500);
+    return;
   }
 
-  const config = { 
-    fps: 10, 
-    qrbox: (width, height) => {
-      const minEdge = Math.min(width, height);
-      const size = Math.floor(minEdge * 0.7);
-      return { width: size, height: size };
+  if (!zxingReader) {
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.QR_CODE
+    ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    
+    zxingReader = new ZXing.BrowserMultiFormatReader(hints, {
+      delayBetweenScanAttempts: 100
+    });
+  }
+
+  const videoElement = document.getElementById('preview-video');
+  if (!videoElement) {
+    console.error("Video element not found");
+    return;
+  }
+
+  const constraints = {
+    video: {
+      facingMode: { ideal: 'environment' },
+      width: { min: 640, ideal: 1280, max: 1920 },
+      height: { min: 480, ideal: 720, max: 1080 },
+      focusMode: { ideal: 'continuous' },
+      zoom: { ideal: 1 }
     }
   };
 
-  html5QrCode.start(
-    { facingMode: "environment" }, 
-    config, 
-    onScanSuccess, 
-    (errorMessage) => {
-      // Silent error callback for scanning failures (no code in view)
+  showToast("Démarrage de la caméra...", "info");
+
+  zxingReader.decodeFromConstraints(
+    constraints,
+    videoElement,
+    (result, error) => {
+      if (result && !isScannerProcessing) {
+        isScannerProcessing = true;
+        stopZxingCamera();
+        onScanSuccess(result.getText());
+      }
+      if (error && !(error instanceof ZXing.NotFoundException)) {
+        console.debug("ZXing scan failure:", error);
+      }
     }
-  ).catch(err => {
+  ).then(controls => {
+    zxingControls = controls;
+    showToast("Caméra prête. Scannez un code !", "success");
+  }).catch(err => {
     console.error("Camera start error:", err);
     showToast(`Caméra bloquée : ${err.message || err}. Utilisez l'option photo ci-dessous.`, "warning");
-    // Leave modal open so user can use the fallback photo/camera capture option
   });
+}
+
+function stopZxingCamera() {
+  if (zxingControls) {
+    try {
+      zxingControls.stop();
+    } catch (e) {
+      console.warn("Error stopping ZXing controls:", e);
+    }
+    zxingControls = null;
+  }
+  
+  const videoElement = document.getElementById('preview-video');
+  if (videoElement && videoElement.srcObject) {
+    try {
+      const stream = videoElement.srcObject;
+      stream.getTracks().forEach(track => track.stop());
+      videoElement.srcObject = null;
+    } catch (e) {
+      console.warn("Error cleaning up video stream:", e);
+    }
+  }
+  isScannerProcessing = false;
 }
 
 function closeScanner() {
   const modalScanner = document.getElementById('scanner-modal');
-  if (html5QrCode && html5QrCode.isScanning) {
-    html5QrCode.stop().then(() => {
-      modalScanner.close();
-    }).catch(err => {
-      modalScanner.close();
-    });
-  } else {
-    modalScanner.close();
-  }
+  stopZxingCamera();
+  modalScanner.close();
 }
 
 function onScanSuccess(decodedText, decodedResult) {
