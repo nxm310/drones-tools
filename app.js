@@ -1712,6 +1712,7 @@ function refreshDashboardStats() {
    ========================================================================== */
 let zxingReader = null;
 let zxingControls = null;
+let scannerStream = null; // Track global du flux pour nettoyage facile
 let currentScannerTarget = null; // 'list' or 'form'
 let isScannerProcessing = false;
 
@@ -1795,7 +1796,7 @@ function setupScanner() {
   }
 }
 
-function openScanner(target) {
+async function openScanner(target) {
   currentScannerTarget = target;
   isScannerProcessing = false;
   
@@ -1829,60 +1830,134 @@ function openScanner(target) {
     return;
   }
 
-  const constraints = {
-    video: {
-      facingMode: { ideal: 'environment' },
-      width: { min: 640, ideal: 1280, max: 1920 },
-      height: { min: 480, ideal: 720, max: 1080 },
-      focusMode: { ideal: 'continuous' },
-      zoom: { ideal: 1 }
-    }
-  };
+  // Configuration stricte pour l'autoplay iOS Safari
+  videoElement.setAttribute('autoplay', 'true');
+  videoElement.setAttribute('muted', 'true');
+  videoElement.setAttribute('playsinline', 'true');
 
   showToast("Démarrage de la caméra...", "info");
 
-  zxingReader.decodeFromConstraints(
-    constraints,
-    videoElement,
-    (result, error) => {
-      if (result && !isScannerProcessing) {
-        isScannerProcessing = true;
-        stopZxingCamera();
-        onScanSuccess(result.getText());
+  // Acquisition manuelle du flux en mode dégradé progressif (paliers) pour iOS
+  let stream = null;
+  const constraintTiers = [
+    {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { min: 640, ideal: 1280, max: 1920 },
+        height: { min: 480, ideal: 720, max: 1080 }
       }
-      if (error && !(error instanceof ZXing.NotFoundException)) {
-        console.debug("ZXing scan failure:", error);
+    },
+    {
+      video: {
+        facingMode: { ideal: 'environment' }
       }
+    },
+    {
+      video: true
     }
-  ).then(controls => {
-    zxingControls = controls;
-    showToast("Caméra prête. Scannez un code !", "success");
-  }).catch(err => {
-    console.error("Camera start error:", err);
-    showToast(`Caméra bloquée : ${err.message || err}. Utilisez l'option photo ci-dessous.`, "warning");
-  });
+  ];
+
+  let lastError = null;
+  for (const constraints of constraintTiers) {
+    try {
+      console.log("Tentative getUserMedia avec:", constraints);
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (stream) break; // Succès
+    } catch (err) {
+      console.warn("Échec getUserMedia pour ce palier:", constraints, err);
+      lastError = err;
+    }
+  }
+
+  if (!stream) {
+    console.error("Tous les paliers getUserMedia ont échoué:", lastError);
+    showToast(`Caméra bloquée : ${lastError?.message || lastError || "Accès refusé"}. Utilisez l'option photo ci-dessous.`, "warning");
+    return;
+  }
+
+  try {
+    scannerStream = stream;
+    videoElement.srcObject = stream;
+    
+    // Forcer la lecture pour s'assurer que le flux tourne (requis sur iOS PWA)
+    await videoElement.play();
+    console.log("Lecture de la vidéo OK");
+
+    // Tentative d'application de l'autofocus continu de façon asynchrone sans faire crasher la caméra
+    try {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack && videoTrack.getCapabilities) {
+        const capabilities = videoTrack.getCapabilities();
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          await videoTrack.applyConstraints({
+            advanced: [{ focusMode: 'continuous' }]
+          });
+          console.log("Autofocus continu activé");
+        }
+      }
+    } catch (e) {
+      console.warn("Impossible d'appliquer les contraintes autofocus avancées:", e);
+    }
+
+    // On lance ZXing UNIQUEMENT sur la vidéo qui tourne déjà parfaitement !
+    zxingReader.decodeFromVideoElement(
+      videoElement,
+      (result, error) => {
+        if (result && !isScannerProcessing) {
+          isScannerProcessing = true;
+          stopZxingCamera();
+          onScanSuccess(result.getText());
+        }
+        if (error && !(error instanceof ZXing.NotFoundException)) {
+          console.debug("Échec scan ZXing:", error);
+        }
+      }
+    ).then(controls => {
+      zxingControls = controls;
+      showToast("Caméra prête. Scannez un code !", "success");
+    }).catch(err => {
+      console.error("Erreur decodeFromVideoElement:", err);
+      showToast("Erreur d'initialisation du décodeur interne.", "error");
+    });
+
+  } catch (err) {
+    console.error("Erreur de lancement de la vidéo:", err);
+    stopZxingCamera();
+    showToast("Impossible de lancer l'aperçu caméra.", "error");
+  }
 }
 
 function stopZxingCamera() {
   if (zxingControls) {
-    try {
-      zxingControls.stop();
-    } catch (e) {
-      console.warn("Error stopping ZXing controls:", e);
-    }
+    try { zxingControls.stop(); } catch (e) { console.warn(e); }
     zxingControls = null;
   }
   
-  const videoElement = document.getElementById('preview-video');
-  if (videoElement && videoElement.srcObject) {
+  if (scannerStream) {
     try {
-      const stream = videoElement.srcObject;
-      stream.getTracks().forEach(track => track.stop());
-      videoElement.srcObject = null;
-    } catch (e) {
-      console.warn("Error cleaning up video stream:", e);
-    }
+      scannerStream.getTracks().forEach(track => track.stop());
+    } catch (e) { console.warn(e); }
+    scannerStream = null;
   }
+  
+  const videoElement = document.getElementById('preview-video');
+  if (videoElement) {
+    try {
+      if (videoElement.srcObject) {
+        const stream = videoElement.srcObject;
+        stream.getTracks().forEach(track => track.stop());
+        videoElement.srcObject = null;
+      }
+      videoElement.pause();
+      videoElement.removeAttribute("src");
+      try { videoElement.load(); } catch (_) {}
+    } catch (e) { console.warn(e); }
+  }
+  
+  if (zxingReader) {
+    try { zxingReader.reset(); } catch (_) {}
+  }
+  
   isScannerProcessing = false;
 }
 
