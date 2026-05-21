@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover is essential to support iOS safe area (notches and home indicators) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FPV Drone & Battery Manager</title>
+  
+  <!-- iOS Meta Tags for PWA capabilities -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FPV Manager">
+  <link rel="apple-touch-icon" href="icon.svg">
+  
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Fonts: Outfit (modern/sleek UI) & JetBrains Mono (Betaflight dumps) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  
+  <!-- App Container -->
+  <div class="app-shell">
+    
+    <!-- Top Cyber Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand">
+          <span class="logo-glow"></span>
+          <h1 id="app-title">FPV Manager</h1>
+        </div>
+        <div class="header-actions">
+          <button id="btn-add-quick" class="btn-icon" aria-label="Ajout rapide">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Content Area (SPA views) -->
+    <main class="app-viewport">
+      
+      <!-- VIEW: ACCUEIL / DASHBOARD -->
+      <section id="view-home" class="app-view active">
+        <div class="home-header">
+          <h2>Prêt au vol, Pilote ?</h2>
+          <p>Tableau de bord de votre flotte FPV</p>
+        </div>
+        
+        <div class="dashboard-grid">
+          <a href="#drones" class="dash-card fpv-card-glow-violet">
+            <svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <div class="dash-info">
+              <h3>Ma Flotte</h3>
+              <span class="dash-stat" id="dash-stat-drones">0 Drones</span>
+            </div>
+          </a>
+          
+          <a href="#batteries" class="dash-card fpv-card-glow-cyan">
+            <svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+            <div class="dash-info">
+              <h3>Batteries</h3>
+              <span class="dash-stat" id="dash-stat-batt">0 LiPos</span>
+            </div>
+          </a>
+          
+          <a href="#projects" class="dash-card fpv-card-glow-orange">
+            <svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <div class="dash-info">
+              <h3>Projets</h3>
+              <span class="dash-stat" id="dash-stat-proj">0 En cours</span>
+            </div>
+          </a>
+          
+          <a href="#wishlist" class="dash-card fpv-card-glow-pink">
+            <svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            <div class="dash-info">
+              <h3>Wishlist</h3>
+              <span class="dash-stat" id="dash-stat-wish">0 Pièces</span>
+            </div>
+          </a>
+          
+          <a href="#settings" class="dash-card fpv-card-glow-green" style="grid-column: 1 / -1;">
+            <svg class="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <div class="dash-info">
+              <h3>Réglages & Data</h3>
+              <span class="dash-stat">Import/Export, Démo</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- VIEW: DRONES (FLOTTE) -->
+      <section id="view-drones" class="app-view">
+        <div class="view-header-summary">
+          <div class="summary-card">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-drones-total">0</span>
+              <span class="stat-label">Drones</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-green" id="stat-drones-active">0</span>
+              <span class="stat-label">Actifs</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-orange" id="stat-drones-repair">0</span>
+              <span class="stat-label">En Réparation</span>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="search-drones" class="search-input" placeholder="Rechercher un drone...">
+            <select id="filter-drones-status" class="filter-select">
+              <option value="all">Tous les statuts</option>
+              <option value="Active">Actifs</option>
+              <option value="Repair">En réparation</option>
+              <option value="Lost">Perdus</option>
+              <option value="Sold">Vendus</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="cards-grid" id="drones-list-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW: BATTERIES -->
+      <section id="view-batteries" class="app-view">
+        <div class="view-header-summary">
+          <div class="summary-card">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-batt-total">0</span>
+              <span class="stat-label">Batteries</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-cyan" id="stat-batt-charged">0</span>
+              <span class="stat-label">Chargées</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-purple" id="stat-batt-storage">0</span>
+              <span class="stat-label">Stockage</span>
+            </div>
+          </div>
+          <div class="filter-bar" style="display: flex; gap: 8px;">
+            <button id="btn-scan-batteries" class="btn-icon" aria-label="Scanner code-barres" style="flex: 0 0 44px; margin: 0; background: linear-gradient(135deg, var(--primary) 0%, #6200ea 100%); border: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M12 4v16M8 4v16M16 4v16"></path></svg>
+            </button>
+            <input type="text" id="search-batteries" class="search-input" placeholder="Recherche...">
+            <select id="filter-batteries-cells" class="filter-select" style="max-width: 110px;">
+              <option value="all">Toutes</option>
+              <option value="1S">1S</option>
+              <option value="2S">2S</option>
+              <option value="3S">3S</option>
+              <option value="4S">4S</option>
+              <option value="6S">6S</option>
+              <option value="8S">8S</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="cards-grid" id="batteries-list-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW: PROJETS -->
+      <section id="view-projects" class="app-view">
+        <div class="view-header-summary">
+          <div class="summary-card">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-proj-total">0</span>
+              <span class="stat-label">Projets</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-orange" id="stat-proj-ongoing">0</span>
+              <span class="stat-label">En cours</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-green" id="stat-proj-done">0</span>
+              <span class="stat-label">Terminés</span>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="search-projects" class="search-input" placeholder="Rechercher un projet...">
+          </div>
+        </div>
+        
+        <div class="cards-grid" id="projects-list-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW: WISHLIST -->
+      <section id="view-wishlist" class="app-view">
+        <div class="view-header-summary">
+          <div class="summary-card">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-wish-total">0</span>
+              <span class="stat-label">Souhaits</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value text-pink" id="stat-wish-high">0</span>
+              <span class="stat-label">Priorité Haute</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-wish-cost">0€</span>
+              <span class="stat-label">Budget Total</span>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="search-wishlist" class="search-input" placeholder="Rechercher un composant...">
+            <select id="filter-wishlist-priority" class="filter-select">
+              <option value="all">Toutes priorités</option>
+              <option value="High">Haute</option>
+              <option value="Medium">Moyenne</option>
+              <option value="Low">Basse</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="wishlist-list" id="wishlist-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW: PARAMÈTRES / IMPORT-EXPORT -->
+      <section id="view-settings" class="app-view">
+        <div class="settings-container">
+          <div class="settings-card">
+            <h2>Sauvegarde & Synchro</h2>
+            <p class="settings-desc">Vos données sont stockées localement sur votre iPhone/iPad dans une base de données sécurisée. Exportez ou importez vos configurations à tout moment.</p>
+            
+            <div class="settings-buttons">
+              <button id="btn-export" class="btn btn-primary btn-glow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Exporter la Base de Données (.json)
+              </button>
+              
+              <label for="import-file" class="btn btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Importer une Base de Données
+              </label>
+              <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+            
+            <div id="import-status" class="import-status-msg"></div>
+          </div>
+          
+          <div class="settings-card">
+            <h2>Données de Démo</h2>
+            <p class="settings-desc">Vous pouvez charger des données fictives complètes pour explorer l'application (Drones freestyle, batteries Tattu, projets Cinewhoop pré-remplis).</p>
+            <button id="btn-load-demo" class="btn btn-secondary text-cyan">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+              Charger les données de démonstration
+            </button>
+            <button id="btn-clear-db" class="btn btn-danger">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              Réinitialiser l'application
+            </button>
+          </div>
+          
+          <div class="settings-card info-card">
+            <h2>À propos de FPV Manager</h2>
+            <p>Conçu pour les pilotes exigeants. Permet un suivi précis de vos cycles LiPo/LiIon, stocke vos factures pour les assurances en cas de perte de drone, et permet de configurer vos builds méthodiquement.</p>
+            <div class="app-version-badge">Version 1.0.0 (PWA)</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Tab Navigation Bar (iOS style) -->
+    <nav class="app-tabbar">
+      <a href="#home" id="tab-home" class="tab-item active">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="tab-label">Accueil</span>
+      </a>
+      <a href="#drones" id="tab-drones" class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <span class="tab-label">Flotte</span>
+      </a>
+      <a href="#batteries" id="tab-batteries" class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+        <span class="tab-label">Batteries</span>
+      </a>
+      <a href="#projects" id="tab-projects" class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <span class="tab-label">Projets</span>
+      </a>
+      <a href="#wishlist" id="tab-wishlist" class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        <span class="tab-label">Wishlist</span>
+      </a>
+      </a>
+    </nav>
+  </div>
+
+  <!-- iOS-style Slidable Bottom Sheet (Dialog Modal) for adding/editing elements -->
+  <dialog id="modal-form" class="ios-modal">
+    <div class="modal-wrapper">
+      <div class="modal-drag-indicator"></div>
+      <header class="modal-header">
+        <h3 id="modal-form-title">Ajouter un Drone</h3>
+        <button id="btn-modal-close" class="modal-close-btn">&times;</button>
+      </header>
+      
+      <div class="modal-body">
+        <form id="app-form" autocomplete="off">
+          <input type="hidden" id="form-entity-type" value="drone">
+          <input type="hidden" id="form-entity-id" value="">
+          
+          <!-- FIELDS DYNAMIQUES SELON L'ENTITÉ -->
+          <div id="dynamic-form-fields">
+            <!-- Form fields injected by app.js depending on whether we add a drone, battery, project or wishlist item -->
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-glow">Enregistrer</button>
+            <button type="button" id="btn-form-cancel" class="btn btn-secondary">Annuler</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Fullscreen Barcode Scanner Modal -->
+  <dialog id="scanner-modal" class="ios-modal scanner-modal">
+    <div class="modal-wrapper" style="padding: 0; border-radius: 0; max-height: 100vh; height: 100vh; background: #000;">
+      <header class="modal-header" style="position: absolute; top: 0; left: 0; right: 0; z-index: 300; padding: 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); margin-bottom: 0;">
+        <h3 style="color: white; font-weight: 600;">Scanner un code</h3>
+        <button id="btn-scanner-close" class="modal-close-btn" style="color: white; background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </header>
+      
+      <div id="reader" style="width: 100%; height: 100%; overflow: hidden; position: relative;"></div>
+      
+      <div class="scanner-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; pointer-events: none; z-index: 200;">
+        <div class="scanner-target" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 30%; border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.6);"></div>
+        <p style="position: absolute; bottom: 80px; left: 0; right: 0; text-align: center; color: white; font-size: 0.9rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Placez le code-barres ou QR au centre.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- iOS-style Sliding Side Drawer (or fullscreen stack) for Entity Details -->
+  <div id="panel-details" class="ios-panel">
+    <header class="panel-header">
+      <button id="btn-panel-back" class="btn-back">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Retour
+      </button>
+      <h3 id="panel-details-title">Détails du Drone</h3>
+      <button id="btn-panel-edit" class="btn-text">Modifier</button>
+    </header>
+    
+    <div class="panel-body" id="panel-details-body">
+      <!-- Detailed info dynamically loaded here (e.g. Drone specs, Betaflight parser, invoices, project components) -->
+    </div>
+  </div>
+
+  <!-- Global Alert/Notification System -->
+  <div id="notification-toast" class="toast"></div>
+
+  <!-- Service Worker registration for PWA offline capabilities -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Registering SW dynamically (we'll make a basic, robust fetch cache)
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker enregistré !', reg.scope))
+          .catch(err => console.warn('Échec SW:', err));
+      });
+    }
+  </script>
+  
+  <!-- External Libraries -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <!-- App Scripts -->
+  <script src="db.js"></script>
+  <script src="betaflightParser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
