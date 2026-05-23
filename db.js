@@ -8,6 +8,20 @@ const DB_VERSION = 1;
 
 const FPVDatabase = {
   db: null,
+  onSyncCallback: null,
+
+  /**
+   * Internal hook to trigger synchronization when data changes locally
+   */
+  onItemChanged(action, storeName, item) {
+    if (typeof this.onSyncCallback === 'function') {
+      try {
+        this.onSyncCallback(action, storeName, item);
+      } catch (err) {
+        console.error("Erreur dans le callback de synchro:", err);
+      }
+    }
+  },
 
   /**
    * Initialize the IndexedDB instance
@@ -100,7 +114,10 @@ const FPVDatabase = {
         const store = transaction.objectStore(storeName);
         const request = store.add(item);
 
-        request.onsuccess = () => resolve(item);
+        request.onsuccess = () => {
+          this.onItemChanged('put', storeName, item);
+          resolve(item);
+        };
         request.onerror = (e) => reject(e.target.error);
       });
     });
@@ -116,7 +133,10 @@ const FPVDatabase = {
         const store = transaction.objectStore(storeName);
         const request = store.put(item);
 
-        request.onsuccess = () => resolve(item);
+        request.onsuccess = () => {
+          this.onItemChanged('put', storeName, item);
+          resolve(item);
+        };
         request.onerror = (e) => reject(e.target.error);
       });
     });
@@ -132,7 +152,10 @@ const FPVDatabase = {
         const store = transaction.objectStore(storeName);
         const request = store.delete(id);
 
-        request.onsuccess = () => resolve(id);
+        request.onsuccess = () => {
+          this.onItemChanged('delete', storeName, { id });
+          resolve(id);
+        };
         request.onerror = (e) => reject(e.target.error);
       });
     });

@@ -1168,6 +1168,68 @@ body {
 .import-success { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.2); }
 .import-error { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2); }
 
+.icloud-sync-guide {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed var(--surface-border);
+}
+
+.icloud-sync-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+
+.icloud-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--cyan);
+}
+
+.icloud-sync-guide p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.icloud-sync-guide ul {
+  padding-left: 16px;
+  margin-bottom: 10px;
+}
+
+.icloud-sync-guide li {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.icloud-sync-guide li strong {
+  color: #fff;
+}
+
+.icloud-sync-guide li code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.icloud-sync-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  padding: 8px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
 .info-card {
   border-left: 4px solid var(--primary);
   display: flex;

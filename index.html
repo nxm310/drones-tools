@@ -250,6 +250,63 @@
             </div>
             
             <div id="import-status" class="import-status-msg"></div>
+
+            <div class="icloud-sync-guide">
+              <div class="icloud-sync-header">
+                <svg class="icloud-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                </svg>
+                <span>Synchronisation iCloud (Manuelle)</span>
+              </div>
+              <p>Vous pouvez partager vos données entre tous vos appareils Apple (iPhone, iPad, Mac) via votre compte iCloud personnel :</p>
+              <ul>
+                <li><strong>Pour sauvegarder :</strong> Cliquez sur <em>Exporter</em>, puis dans l'écran de partage Apple, choisissez <code>Enregistrer dans Fichiers</code> et placez le fichier dans un dossier sur votre <strong>iCloud Drive</strong>.</li>
+                <li><strong>Pour synchroniser :</strong> Sur vos autres appareils Apple, cliquez sur <em>Importer</em>, ouvrez votre <strong>iCloud Drive</strong> et sélectionnez ce même fichier.</li>
+              </ul>
+              <div class="icloud-sync-note">
+                💡 Astuce : Si vous écrasez le même fichier à chaque export, iCloud se charge de répercuter instantanément la version la plus récente sur tous vos appareils !
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card" id="cloud-sync-card">
+            <h2>Synchronisation Cloud (Automatique)</h2>
+            <p class="settings-desc">Activez la synchronisation automatique en temps réel entre tous vos appareils (iPhone, iPad, Mac) via votre compte cloud sécurisé.</p>
+            
+            <div id="sync-logged-out">
+              <form id="sync-login-form" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <input type="email" id="sync-email" placeholder="Adresse email" required style="background: rgba(255,255,255,0.05); border: 1px solid var(--surface-border); padding: 12px; border-radius: 12px; color: #fff; font-size: 0.9rem; outline: none; width: 100%; box-sizing: border-box;">
+                  <input type="password" id="sync-password" placeholder="Mot de passe" required style="background: rgba(255,255,255,0.05); border: 1px solid var(--surface-border); padding: 12px; border-radius: 12px; color: #fff; font-size: 0.9rem; outline: none; width: 100%; box-sizing: border-box;">
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                  <button type="submit" id="btn-sync-login" class="btn btn-primary btn-glow" style="flex: 1; padding: 10px; font-size: 0.85rem;">Connexion</button>
+                  <button type="button" id="btn-sync-register" class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: 0.85rem; border: 1px solid var(--surface-border);">Créer un compte</button>
+                </div>
+              </form>
+            </div>
+            
+            <div id="sync-logged-in" style="display: none;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: var(--green); width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px var(--green);"></div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Synchronisation active</div>
+                    <div id="sync-user-email" style="font-weight: bold; color: #fff; font-size: 0.85rem;">...</div>
+                  </div>
+                </div>
+              </div>
+              
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4;">
+                🔄 Vos drones, batteries, projets et wishlist sont sauvegardés en toute sécurité dans le cloud et synchronisés instantanément sur tous vos écrans connectés.
+              </p>
+              
+              <button id="btn-sync-logout" class="btn btn-danger" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Se Déconnecter
+              </button>
+            </div>
           </div>
           
           <div class="settings-card">
@@ -389,9 +446,15 @@
   <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <!-- App Scripts -->
   <script src="db.js"></script>
   <script src="betaflightParser.js"></script>
   <script src="app.js"></script>
+  <script src="sync.js"></script>
 </body>
 </html>

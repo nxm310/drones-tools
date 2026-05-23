@@ -1610,16 +1610,24 @@ function exportDatabase() {
       wishlist
     };
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
+    // Create a blob instead of data URI for reliability with large datasets (invoices base64) on Safari/iOS
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
     
     // Trigger download
     const downloadAnchor = document.createElement('a');
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `fpv_manager_backup_${dateStr}.json`);
+    downloadAnchor.href = url;
+    downloadAnchor.download = `fpv_manager_backup_${dateStr}.json`;
     document.body.appendChild(downloadAnchor);
+    
     downloadAnchor.click();
-    downloadAnchor.remove();
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(downloadAnchor);
+      URL.revokeObjectURL(url);
+    }, 100);
 
     showToast("Base de données exportée avec succès !", "success");
   }).catch(err => {
