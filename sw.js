@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fpv-manager-v1';
+const CACHE_NAME = 'fpv-manager-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './app.js',
   './db.js',
   './betaflightParser.js',
+  './sync.js',
   './manifest.json',
   './icon.svg'
 ];
