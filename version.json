@@ -1,8 +1,8 @@
 {
-  "version": "2.5.0",
+  "version": "2.6.0",
   "changelog": [
-    "✨ NOUVEAUTÉ : L'historique des modifications (Changelog) s'affiche maintenant fièrement ici !",
-    "🚀 Transition de mise à jour 100% stable et fixe.",
-    "🛡️ Purge intégrale du cache navigateur réussie."
+    "✨ Suppression définitive des données de démonstration automatiques au démarrage.",
+    "🛡️ Élimination des conflits de synchronisation Cloud liés aux données de démo.",
+    "⚙️ Interface des Réglages épurée pour ne conserver que la réinitialisation."
   ]
 }

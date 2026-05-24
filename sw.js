@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fpv-manager-v9';
+const CACHE_NAME = 'fpv-manager-v10';
 const ASSETS = [
   './',
   './index.html',

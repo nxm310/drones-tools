@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   FPVDatabase.init()
     .then(() => {
       initApp();
-      // Check if DB is empty; if so, load demo data automatically to give a great first impression
-      checkEmptyDatabaseAndSetup();
+      refreshAllViews();
     })
     .catch(err => {
       showToast("Erreur de base de données : " + err.message, "error");
@@ -20,27 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let currentView = 'home';
 let activeEntity = null; // Holds the currently viewed drone/battery/project/wishlist item
 
-/**
- * Check if the IndexedDB is completely empty, and if so, load the demo data
- */
-function checkEmptyDatabaseAndSetup() {
-  Promise.all([
-    FPVDatabase.getAll('drones'),
-    FPVDatabase.getAll('batteries'),
-    FPVDatabase.getAll('projects'),
-    FPVDatabase.getAll('wishlist')
-  ]).then(([drones, batteries, projects, wishlist]) => {
-    if (drones.length === 0 && batteries.length === 0 && projects.length === 0 && wishlist.length === 0) {
-      console.log("Base de données vide. Chargement automatique des données de démonstration...");
-      FPVDatabase.loadDemoData().then(() => {
-        refreshAllViews();
-        showToast("Bienvenue ! Données de démonstration chargées pour commencer.", "info");
-      });
-    } else {
-      refreshAllViews();
-    }
-  });
-}
+
 
 /**
  * Main application initializer
@@ -165,15 +144,6 @@ function setupEventListeners() {
   const btnPanelEdit = document.getElementById('btn-panel-edit');
 
   // Settings Actions
-  document.getElementById('btn-load-demo').addEventListener('click', () => {
-    if (confirm("Voulez-vous charger les données de démo ? Vos données actuelles seront remplacées.")) {
-      FPVDatabase.loadDemoData().then(() => {
-        refreshAllViews();
-        showToast("Données de démonstration chargées avec succès !", "success");
-      });
-    }
-  });
-
   document.getElementById('btn-clear-db').addEventListener('click', () => {
     if (confirm("ATTENTION : Voulez-vous vraiment vider toutes vos données ? Cette action est irréversible.")) {
       FPVDatabase.clearAll().then(() => {
