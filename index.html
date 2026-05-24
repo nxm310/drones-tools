@@ -325,7 +325,7 @@
           <div class="settings-card info-card">
             <h2>À propos de FPV Manager</h2>
             <p>Conçu pour les pilotes exigeants. Permet un suivi précis de vos cycles LiPo/LiIon, stocke vos factures pour les assurances en cas de perte de drone, et permet de configurer vos builds méthodiquement.</p>
-            <div class="app-version-badge">Version 2.3.0 (PWA)</div>
+            <div class="app-version-badge">Version 2.4.0 (PWA)</div>
           </div>
         </div>
       </section>
@@ -442,6 +442,14 @@
       <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0; text-align: left;">
         Une nouvelle version de <strong>FPV Manager</strong> est prête à être installée avec de nouvelles améliorations et correctifs.
       </p>
+
+      <!-- Dynamic Changelog Section -->
+      <div id="pwa-update-changelog-section" style="background: rgba(124, 77, 255, 0.05); border: 1px solid rgba(124, 77, 255, 0.15); border-radius: 12px; padding: 12px; font-size: 0.8rem; line-height: 1.4; color: var(--text-muted); text-align: left; width: 100%; box-sizing: border-box; display: none;">
+        <strong style="color: var(--primary);">Nouveautés de cette version :</strong>
+        <ul id="pwa-update-changelog-list" style="margin: 6px 0 0 16px; padding: 0; color: #fff; font-size: 0.78rem;">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
       
       <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); border-radius: 12px; padding: 12px; font-size: 0.8rem; line-height: 1.4; color: var(--text-muted); text-align: left; width: 100%; box-sizing: border-box;">
         <strong style="color: #fff;">Procédure de mise à jour :</strong>
@@ -460,7 +468,7 @@
 
   <!-- Service Worker and PWA Version Checker (Bypasses iOS Caches) -->
   <script>
-    const CURRENT_VERSION = '2.3.0';
+    const CURRENT_VERSION = '2.4.0';
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -480,19 +488,29 @@
         .then(data => {
           if (data && data.version && data.version !== CURRENT_VERSION) {
             console.log("Nouvelle version disponible:", data.version);
-            showPwaUpdateModal(data.version);
+            showPwaUpdateModal(data.version, data.changelog);
           }
         })
         .catch(err => console.warn("Erreur vérification version:", err));
     }
 
     // Function to show the beautiful iOS PWA update modal
-    function showPwaUpdateModal(newVersion) {
+    function showPwaUpdateModal(newVersion, changelog) {
       const modal = document.getElementById('modal-pwa-update');
       const btnUpdate = document.getElementById('btn-pwa-update-now');
       const btnLater = document.getElementById('btn-pwa-update-later');
+      const changelogSection = document.getElementById('pwa-update-changelog-section');
+      const changelogList = document.getElementById('pwa-update-changelog-list');
       
       if (!modal || modal.open) return;
+      
+      // Populate changelog if available
+      if (changelog && Array.isArray(changelog) && changelog.length > 0) {
+        changelogList.innerHTML = changelog.map(note => `<li style="margin-bottom: 3px;">${note}</li>`).join('');
+        changelogSection.style.display = 'block';
+      } else {
+        changelogSection.style.display = 'none';
+      }
       
       // Open the dialog modal
       modal.showModal();
