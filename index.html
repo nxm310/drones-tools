@@ -325,7 +325,7 @@
           <div class="settings-card info-card">
             <h2>À propos de FPV Manager</h2>
             <p>Conçu pour les pilotes exigeants. Permet un suivi précis de vos cycles LiPo/LiIon, stocke vos factures pour les assurances en cas de perte de drone, et permet de configurer vos builds méthodiquement.</p>
-            <div class="app-version-badge">Version 2.1.0 (PWA)</div>
+            <div class="app-version-badge">Version 2.2.0 (PWA)</div>
           </div>
         </div>
       </section>
@@ -458,62 +458,81 @@
     </div>
   </dialog>
 
-  <!-- Service Worker registration with smart PWA update popup detection -->
+  <!-- Service Worker and PWA Version Checker (Bypasses iOS Caches) -->
   <script>
+    const CURRENT_VERSION = '2.2.0';
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
-          .then(reg => {
-            console.log('Service Worker enregistré !', reg.scope);
-            
-            // 1. Check if a new version is already waiting immediately on load
-            if (reg.waiting) {
-              showPwaUpdateModal(reg.waiting);
-            }
-            
-            // 2. Listen for a new version arriving while the app is open
-            reg.addEventListener('updatefound', () => {
-              const newWorker = reg.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  showPwaUpdateModal(newWorker);
-                }
-              });
-            });
-          })
+          .then(reg => console.log('Service Worker enregistré !', reg.scope))
           .catch(err => console.warn('Échec SW:', err));
-      });
-
-      // 3. Reload page when the new Service Worker takes control
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          refreshing = true;
-          window.location.reload();
-        }
       });
     }
 
+    // Direct Version Checking from version.json (Bypasses all cache issues completely!)
+    function checkAppVersion() {
+      fetch('version.json?t=' + Date.now())
+        .then(res => {
+          if (!res.ok) throw new Error("Impossible de lire version.json");
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.version && data.version !== CURRENT_VERSION) {
+            console.log("Nouvelle version disponible:", data.version);
+            showPwaUpdateModal(data.version);
+          }
+        })
+        .catch(err => console.warn("Erreur vérification version:", err));
+    }
+
     // Function to show the beautiful iOS PWA update modal
-    function showPwaUpdateModal(worker) {
+    function showPwaUpdateModal(newVersion) {
       const modal = document.getElementById('modal-pwa-update');
       const btnUpdate = document.getElementById('btn-pwa-update-now');
       const btnLater = document.getElementById('btn-pwa-update-later');
       
-      if (!modal) return;
+      if (!modal || modal.open) return;
       
       // Open the dialog modal
       modal.showModal();
       
       btnUpdate.onclick = () => {
-        worker.postMessage({ type: 'SKIP_WAITING' });
-        modal.close();
+        // 1. Unregister all service workers to clear memory
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let reg of registrations) {
+              reg.unregister();
+            }
+          });
+        }
+        
+        // 2. Clear all cache storages to force downloading fresh files from network
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            return Promise.all(names.map(name => caches.delete(name)));
+          }).then(() => {
+            modal.close();
+            window.location.reload();
+          }).catch(() => {
+            modal.close();
+            window.location.reload();
+          });
+        } else {
+          modal.close();
+          window.location.reload();
+        }
       };
       
       btnLater.onclick = () => {
         modal.close();
       };
     }
+
+    // Check version 2 seconds after load
+    setTimeout(checkAppVersion, 2000);
+    // And check every 45 seconds while open
+    setInterval(checkAppVersion, 45000);
   </script>
   
   <!-- External Libraries -->
