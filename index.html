@@ -325,7 +325,7 @@
           <div class="settings-card info-card">
             <h2>À propos de FPV Manager</h2>
             <p>Conçu pour les pilotes exigeants. Permet un suivi précis de vos cycles LiPo/LiIon, stocke vos factures pour les assurances en cas de perte de drone, et permet de configurer vos builds méthodiquement.</p>
-            <div class="app-version-badge">Version 2.0.2 (PWA)</div>
+            <div class="app-version-badge">Version 2.1.0 (PWA)</div>
           </div>
         </div>
       </section>
@@ -431,15 +431,88 @@
   <!-- Global Alert/Notification System -->
   <div id="notification-toast" class="toast"></div>
 
-  <!-- Service Worker registration for PWA offline capabilities -->
+  <!-- Modal Mise à jour PWA -->
+  <dialog id="modal-pwa-update" class="ios-modal" style="max-width: 400px; border-radius: 20px; border: 1px solid var(--surface-border); background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: white; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="text-align: center; display: flex; flex-direction: column; gap: 14px; align-items: center;">
+      <div style="background: rgba(124, 77, 255, 0.15); width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); box-shadow: 0 0 15px rgba(124, 77, 255, 0.25); border: 1px solid rgba(124, 77, 255, 0.3);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+      </div>
+      
+      <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0;">Mise à jour disponible !</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0; text-align: left;">
+        Une nouvelle version de <strong>FPV Manager</strong> est prête à être installée avec de nouvelles améliorations et correctifs.
+      </p>
+      
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); border-radius: 12px; padding: 12px; font-size: 0.8rem; line-height: 1.4; color: var(--text-muted); text-align: left; width: 100%; box-sizing: border-box;">
+        <strong style="color: #fff;">Procédure de mise à jour :</strong>
+        <ol style="margin: 6px 0 0 16px; padding: 0; color: var(--text-muted);">
+          <li style="margin-bottom: 4px;">Cliquez sur le bouton <strong>Installer & Recharger</strong> ci-dessous.</li>
+          <li><strong>Si vous êtes sur iPhone/iPad (PWA) :</strong> Une fois l'application rechargée, fermez-la complètement (glissez vers le haut dans le multitâche d'iOS) puis réouvrez-la depuis votre écran d'accueil pour vider définitivement l'ancien cache système.</li>
+        </ol>
+      </div>
+      
+      <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+        <button id="btn-pwa-update-now" class="btn btn-primary btn-glow" style="flex: 1; padding: 12px; font-size: 0.9rem;">Installer & Recharger</button>
+        <button id="btn-pwa-update-later" class="btn btn-secondary" style="padding: 12px; font-size: 0.9rem; border: 1px solid var(--surface-border);">Plus tard</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Service Worker registration with smart PWA update popup detection -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Registering SW dynamically (we'll make a basic, robust fetch cache)
         navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('Service Worker enregistré !', reg.scope))
+          .then(reg => {
+            console.log('Service Worker enregistré !', reg.scope);
+            
+            // 1. Check if a new version is already waiting immediately on load
+            if (reg.waiting) {
+              showPwaUpdateModal(reg.waiting);
+            }
+            
+            // 2. Listen for a new version arriving while the app is open
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  showPwaUpdateModal(newWorker);
+                }
+              });
+            });
+          })
           .catch(err => console.warn('Échec SW:', err));
       });
+
+      // 3. Reload page when the new Service Worker takes control
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
+
+    // Function to show the beautiful iOS PWA update modal
+    function showPwaUpdateModal(worker) {
+      const modal = document.getElementById('modal-pwa-update');
+      const btnUpdate = document.getElementById('btn-pwa-update-now');
+      const btnLater = document.getElementById('btn-pwa-update-later');
+      
+      if (!modal) return;
+      
+      // Open the dialog modal
+      modal.showModal();
+      
+      btnUpdate.onclick = () => {
+        worker.postMessage({ type: 'SKIP_WAITING' });
+        modal.close();
+      };
+      
+      btnLater.onclick = () => {
+        modal.close();
+      };
     }
   </script>
   

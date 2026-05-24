@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fpv-manager-v4';
+const CACHE_NAME = 'fpv-manager-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -74,4 +74,11 @@ self.addEventListener('fetch', event => {
         });
       })
   );
+});
+
+// Listen for messages from PWA client to skip waiting and activate the new worker
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
