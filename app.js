@@ -212,7 +212,7 @@ function setupEventListeners() {
   btnPanelEdit.addEventListener('click', () => {
     if (activeEntity) {
       const type = activeEntity.id.split('-')[0]; // Extract entity type 'drone'/'batt'/'proj'/'wish'
-      const entityMap = { 'drone': 'drone', 'batt': 'battery', 'proj': 'project', 'wish': 'wishlist' };
+      const entityMap = { 'drone': 'drone', 'dron': 'drone', 'batt': 'battery', 'proj': 'project', 'wish': 'wishlist' };
       openFormModal(entityMap[type], activeEntity);
     }
   });
@@ -1080,7 +1080,7 @@ function renderEntityDetails(entity) {
   container.innerHTML = '';
 
   // 1. DRONE DETAILS
-  if (entityType === 'drone') {
+  if (entityType === 'drone' || entityType === 'dron') {
     // Parse Betaflight config
     const parsedCli = BetaflightParser.parse(entity.betaflightConfig);
     const parsedCliHTML = BetaflightParser.renderHTML(parsedCli);

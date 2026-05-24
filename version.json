@@ -1,9 +1,8 @@
 {
-  "version": "2.4.0",
+  "version": "2.5.0",
   "changelog": [
-    "✨ Historique des modifications (Changelog) dynamique directement dans le pop-up !",
-    "🔄 Système de détection de version anti-cache direct bypass ultra-robuste.",
-    "🚀 Suppression du flash de mise à jour et rechargement passif sous iOS.",
-    "🛠️ Résolution du bogue des nouveaux profils de drones vides (specs & bouton supprimer)."
+    "✨ NOUVEAUTÉ : L'historique des modifications (Changelog) s'affiche maintenant fièrement ici !",
+    "🚀 Transition de mise à jour 100% stable et fixe.",
+    "🛡️ Purge intégrale du cache navigateur réussie."
   ]
 }
