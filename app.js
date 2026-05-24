@@ -55,6 +55,17 @@ function setupRouting() {
     });
   });
 
+  // Favorites segmented control delegation
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('segment-btn')) {
+      document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      if (currentView === 'favorites') {
+        renderFavorites();
+      }
+    }
+  });
+
   // Listen to browser history navigation
   window.addEventListener('hashchange', () => {
     const targetHash = window.location.hash.replace('#', '') || 'home';
@@ -65,6 +76,7 @@ function setupRouting() {
 function switchView(viewName) {
   const views = {
     'home': 'view-home',
+    'favorites': 'view-favorites',
     'drones': 'view-drones',
     'batteries': 'view-batteries',
     'projects': 'view-projects',
@@ -97,6 +109,7 @@ function switchView(viewName) {
   // Dynamic header title
   const titles = {
     'home': 'Accueil Dashboard',
+    'favorites': 'Favoris de Vol',
     'drones': 'Ma Flotte FPV',
     'batteries': 'Mes Batteries',
     'projects': 'Dossiers Projets',
@@ -117,6 +130,7 @@ function switchView(viewName) {
 
 function refreshCurrentView() {
   if (currentView === 'home') refreshDashboardStats();
+  else if (currentView === 'favorites') renderFavorites();
   else if (currentView === 'drones') renderDrones();
   else if (currentView === 'batteries') renderBatteries();
   else if (currentView === 'projects') renderProjects();
@@ -129,6 +143,7 @@ function refreshAllViews() {
   renderBatteries();
   renderProjects();
   renderWishlist();
+  renderFavorites();
 }
 
 /* ==========================================================================
@@ -608,6 +623,9 @@ function renderDrones() {
       return matchSearch && matchStatus;
     });
 
+    // Sort favorites first
+    filtered.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+
     // Update stats
     document.getElementById('stat-drones-total').textContent = drones.length;
     document.getElementById('stat-drones-active').textContent = drones.filter(d => d.status === 'Active').length;
@@ -624,39 +642,7 @@ function renderDrones() {
     }
 
     filtered.forEach(drone => {
-      const card = document.createElement('div');
-      card.className = `fpv-card fpv-card-glow-violet`;
-      card.innerHTML = `
-        <div class="fpv-card-header">
-          <div>
-            <h3 class="fpv-card-title">${drone.name}</h3>
-            <span class="fpv-card-subtitle">${drone.frame || 'Châssis générique'}</span>
-          </div>
-          <span class="badge badge-${drone.status.toLowerCase()}">${drone.status === 'Active' ? 'Actif' : drone.status === 'Repair' ? 'Réparation' : drone.status === 'Lost' ? 'Perdu' : 'Vendu'}</span>
-        </div>
-        
-        <div class="fpv-card-specs">
-          <div class="spec-line">
-            <span class="spec-key">Carte de vol</span>
-            <span class="spec-val">${drone.fc || 'Non spécifiée'}</span>
-          </div>
-          <div class="spec-line">
-            <span class="spec-key">Module VTX</span>
-            <span class="spec-val">${drone.vtx || 'Non spécifié'}</span>
-          </div>
-          <div class="spec-line">
-            <span class="spec-key">Firmware</span>
-            <span class="spec-val">${drone.firmware || 'Non défini'}</span>
-          </div>
-        </div>
-        
-        <div class="fpv-card-footer">
-          <span class="cost-tag">${drone.cost ? drone.cost + '€' : 'Inconnu'}</span>
-          <span class="text-cyan" style="font-size: 0.8rem; font-weight: 600;">Détails →</span>
-        </div>
-      `;
-      
-      card.addEventListener('click', () => openDetailsPanel(drone));
+      const card = createDroneCard(drone);
       container.appendChild(card);
     });
   });
@@ -678,6 +664,9 @@ function renderBatteries() {
       return matchSearch && matchCells;
     });
 
+    // Sort favorites first
+    filtered.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+
     // Update stats
     document.getElementById('stat-batt-total').textContent = batteries.length;
     document.getElementById('stat-batt-charged').textContent = batteries.filter(b => b.status === 'Charged').length;
@@ -694,70 +683,7 @@ function renderBatteries() {
     }
 
     filtered.forEach(batt => {
-      // Glow card based on type
-      const borderMap = { 'LiPo': 'green', 'LiHV': 'pink', 'LiIon': 'cyan' };
-      const border = borderMap[batt.type] || 'violet';
-
-      // Status badge styling
-      const statusLabel = batt.status === 'Storage' ? 'Stockage' : batt.status === 'Charged' ? 'Chargée' : batt.status === 'Discharged' ? 'Déchargée' : 'Hors Service';
-
-      const card = document.createElement('div');
-      card.className = `fpv-card fpv-card-glow-${border}`;
-      card.innerHTML = `
-        <div class="fpv-card-header">
-          <div>
-            <h3 class="fpv-card-title">${batt.name}</h3>
-            <span class="fpv-card-subtitle">${batt.cells}S - ${batt.capacity}mAh (${batt.type})</span>
-          </div>
-          <span class="badge badge-${batt.status.toLowerCase()}">${statusLabel}</span>
-        </div>
-        
-        <div class="fpv-card-specs">
-          <div class="spec-line">
-            <span class="spec-key">Décharge (C-Rating)</span>
-            <span class="spec-val">${batt.cRating ? batt.cRating + 'C' : 'N/A'}</span>
-          </div>
-          <div class="spec-line">
-            <span class="spec-key">Cycles enregistrés</span>
-            <span class="spec-val" style="font-weight: 700;">${batt.cycles}</span>
-          </div>
-        </div>
-        
-        <div class="fpv-card-footer" style="padding-top: 10px;">
-          <!-- Cycle incrementer at flight field -->
-          <div class="cycles-incrementer" stop-propagation>
-            <button class="cycles-btn btn-minus">-</button>
-            <span class="cycles-value">${batt.cycles} cycles</span>
-            <button class="cycles-btn btn-plus">+</button>
-          </div>
-          <span class="text-cyan text-detail-link" style="font-size: 0.8rem; font-weight: 600; cursor: pointer;">Santé →</span>
-        </div>
-      `;
-
-      // Cycle count direct click actions
-      const btnMinus = card.querySelector('.btn-minus');
-      const btnPlus = card.querySelector('.btn-plus');
-      const cycleText = card.querySelector('.cycles-value');
-
-      btnMinus.addEventListener('click', (e) => {
-        e.stopPropagation(); // Avoid opening details panel
-        if (batt.cycles > 0) {
-          batt.cycles--;
-          saveBatteryCycles(batt, cycleText);
-        }
-      });
-
-      btnPlus.addEventListener('click', (e) => {
-        e.stopPropagation();
-        batt.cycles++;
-        saveBatteryCycles(batt, cycleText);
-      });
-
-      card.querySelector('.cycles-incrementer').addEventListener('click', (e) => e.stopPropagation());
-
-      // Open details
-      card.addEventListener('click', () => openDetailsPanel(batt));
-
+      const card = createBatteryCard(batt);
       container.appendChild(card);
     });
   });
@@ -790,6 +716,9 @@ function renderProjects() {
   FPVDatabase.getAll('projects').then(projects => {
     const filtered = projects.filter(p => p.name.toLowerCase().includes(searchVal) || p.description.toLowerCase().includes(searchVal));
 
+    // Sort favorites first
+    filtered.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+
     document.getElementById('stat-proj-total').textContent = projects.length;
     document.getElementById('stat-proj-ongoing').textContent = projects.filter(p => p.status !== 'Completed').length;
     document.getElementById('stat-proj-done').textContent = projects.filter(p => p.status === 'Completed').length;
@@ -805,46 +734,7 @@ function renderProjects() {
     }
 
     filtered.forEach(proj => {
-      // Calculate spent budget vs estimated
-      const spent = proj.components.reduce((sum, c) => sum + (c.status === 'Arrived' || c.status === 'Ordered' ? c.price : 0), 0);
-      
-      // Calculate checklist completion percentage
-      const totalTasks = proj.checklist.length;
-      const completedTasks = proj.checklist.filter(t => t.completed).length;
-      const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-      const card = document.createElement('div');
-      card.className = `fpv-card fpv-card-glow-orange`;
-      card.innerHTML = `
-        <div class="fpv-card-header">
-          <div>
-            <h3 class="fpv-card-title">${proj.name}</h3>
-            <span class="fpv-card-subtitle">${proj.status === 'Planning' ? 'Planification' : proj.status === 'In Progress' ? 'Montage' : proj.status === 'Testing' ? 'Bancs de test' : 'Terminé'}</span>
-          </div>
-          <span class="badge" style="background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.2);">${pct}%</span>
-        </div>
-
-        <p class="text-muted" style="font-size: 0.85rem; line-height: 1.4; margin: 6px 0 12px 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-          ${proj.description || 'Pas de description.'}
-        </p>
-
-        <!-- Dynamic progress bar -->
-        <div style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
-          <div style="width: ${pct}%; background: linear-gradient(90deg, var(--orange) 0%, var(--secondary) 100%); height: 100%; border-radius: 10px; transition: width 0.3s;"></div>
-        </div>
-        
-        <div class="fpv-card-footer">
-          <div style="font-size: 0.8rem;">
-            <span class="spec-key">Investi :</span>
-            <span style="font-weight: 700; color: #fff;">${spent}€</span> 
-            <span class="spec-key">/ Budget :</span>
-            <span style="font-weight: 500; color: var(--text-muted);">${proj.budget}€</span>
-          </div>
-          <span class="text-cyan" style="font-size: 0.8rem; font-weight: 600;">Dossier →</span>
-        </div>
-      `;
-
-      card.addEventListener('click', () => openDetailsPanel(proj));
+      const card = createProjectCard(proj);
       container.appendChild(card);
     });
   });
@@ -865,6 +755,9 @@ function renderWishlist() {
       return matchSearch && matchPriority;
     });
 
+    // Sort favorites first
+    filtered.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+
     const totalCost = filtered.reduce((sum, item) => sum + item.price, 0);
 
     document.getElementById('stat-wish-total').textContent = wishlist.length;
@@ -882,55 +775,7 @@ function renderWishlist() {
     }
 
     filtered.forEach(item => {
-      const elem = document.createElement('div');
-      elem.className = 'wish-item';
-      
-      const priorityLabel = item.priority === 'High' ? 'Priorité Haute' : item.priority === 'Medium' ? 'Moyenne' : 'Basse';
-
-      elem.innerHTML = `
-        <div class="wish-left">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="priority-indicator priority-${item.priority}"></div>
-            <span class="wish-title">${item.name}</span>
-          </div>
-          <div class="wish-meta">
-            <span>Catégorie : ${item.category}</span>
-            <span>•</span>
-            <span class="text-${item.priority === 'High' ? 'red' : item.priority === 'Medium' ? 'orange' : 'cyan'}">${priorityLabel}</span>
-          </div>
-          ${item.notes ? `<p class="text-muted" style="font-size: 0.8rem; line-height: 1.3; margin-top: 4px;">${item.notes}</p>` : ''}
-        </div>
-        <div class="wish-right">
-          <span style="font-weight: 800; color: #fff; font-size: 1.15rem;">${item.price}€</span>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
-            <button class="btn-small-view btn-wish-edit" style="background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-            <button class="btn-small-view btn-wish-delete" style="background: rgba(239, 68, 68, 0.15); color: var(--red); border-color: rgba(239, 68, 68, 0.3);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
-            ${item.link ? `<a href="${item.link}" target="_blank" class="btn-small-view" style="text-decoration: none;">Acheter ↗</a>` : ''}
-            <button class="btn-small-view btn-wish-convert" style="background: rgba(124,77,255,0.12); color: var(--primary); border-color: rgba(124,77,255,0.25);">Convertir</button>
-          </div>
-        </div>
-      `;
-
-      // Convert purchased item logic
-      elem.querySelector('.btn-wish-convert').addEventListener('click', () => {
-        convertWishlistItem(item);
-      });
-
-      // Edit logic
-      elem.querySelector('.btn-wish-edit').addEventListener('click', () => {
-        openFormModal('wishlist', item);
-      });
-
-      // Delete logic
-      elem.querySelector('.btn-wish-delete').addEventListener('click', () => {
-        if (confirm(`Voulez-vous vraiment supprimer "${item.name}" ?`)) {
-          FPVDatabase.delete('wishlist', item.id).then(() => {
-            refreshCurrentView();
-            showToast("Objet supprimé de la wishlist.", "info");
-          });
-        }
-      });
-
+      const elem = createWishlistCard(item);
       container.appendChild(elem);
     });
   });
@@ -1077,7 +922,10 @@ function renderEntityDetails(entity) {
     container.innerHTML = `
       <div class="detail-banner">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h4 style="font-size: 1.3rem; font-weight: 700; color: #fff;">${entity.name}</h4>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h4 style="font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0;">${entity.name}</h4>
+            <button class="btn-favorite-star ${entity.favorite ? 'is-favorite' : ''}" onclick="toggleDetailFavorite('${entity.id}')" style="font-size: 1.4rem;">★</button>
+          </div>
           <span class="badge badge-${entity.status.toLowerCase()}">${entity.status === 'Active' ? 'Actif' : 'En panne'}</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -4px;">Châssis : ${entity.frame || 'Non précisé'}</p>
@@ -1189,7 +1037,10 @@ function renderEntityDetails(entity) {
     container.innerHTML = `
       <div class="detail-banner" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%); border-color: rgba(16, 185, 129, 0.3);">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h4 style="font-size: 1.3rem; font-weight: 700; color: #fff;">${entity.name}</h4>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h4 style="font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0;">${entity.name}</h4>
+            <button class="btn-favorite-star ${entity.favorite ? 'is-favorite' : ''}" onclick="toggleDetailFavorite('${entity.id}')" style="font-size: 1.4rem;">★</button>
+          </div>
           <span class="badge badge-${entity.status.toLowerCase()}">${entity.status}</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -4px;">Format : ${entity.cells}S - ${entity.capacity}mAh (${entity.type})</p>
@@ -1273,7 +1124,10 @@ function renderEntityDetails(entity) {
     container.innerHTML = `
       <div class="detail-banner" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(236, 72, 153, 0.05) 100%); border-color: rgba(249, 115, 22, 0.3);">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h4 style="font-size: 1.3rem; font-weight: 700; color: #fff;">${entity.name}</h4>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h4 style="font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0;">${entity.name}</h4>
+            <button class="btn-favorite-star ${entity.favorite ? 'is-favorite' : ''}" onclick="toggleDetailFavorite('${entity.id}')" style="font-size: 1.4rem;">★</button>
+          </div>
           <span class="badge" style="background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3);">${entity.status}</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -4px;">${entity.description || 'Pas de description.'}</p>
@@ -1550,6 +1404,33 @@ window.toggleChecklistTask = function(index) {
     if (task.completed) {
       showToast("Étape complétée ! ✓", "success");
     }
+  });
+};
+
+/* ==========================================================================
+   GLOBAL DETAIL PANEL FAVORITE TOGGLE
+   ========================================================================== */
+window.toggleDetailFavorite = function(id) {
+  const storeNameMap = {
+    'dron': 'drones',
+    'drone': 'drones',
+    'batt': 'batteries',
+    'proj': 'projects',
+    'wish': 'wishlist'
+  };
+  const prefix = id.split('-')[0];
+  const storeName = storeNameMap[prefix];
+  if (!storeName) return;
+
+  FPVDatabase.get(storeName, id).then(entity => {
+    entity.favorite = !entity.favorite;
+    FPVDatabase.put(storeName, entity).then(() => {
+      // Re-render the details panel to update star state
+      renderEntityDetails(entity);
+      // Refresh the background lists
+      refreshCurrentView();
+      showToast(entity.favorite ? "Ajouté aux favoris ⭐" : "Retiré des favoris", "success");
+    });
   });
 };
 
@@ -1984,3 +1865,363 @@ function onScanFailure(error) {
 
 // Initialize scanner
 setupScanner();
+
+/* ==========================================================================
+   FAVORITES LOGIC & REUSABLE CARD RENDERERS
+   ========================================================================== */
+function createDroneCard(drone) {
+  const card = document.createElement('div');
+  card.className = `fpv-card fpv-card-glow-violet`;
+  card.innerHTML = `
+    <div class="fpv-card-header">
+      <div>
+        <h3 class="fpv-card-title">${drone.name}</h3>
+        <span class="fpv-card-subtitle">${drone.frame || 'Châssis générique'}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-favorite-star ${drone.favorite ? 'is-favorite' : ''}" stop-propagation>★</button>
+        <span class="badge badge-${drone.status.toLowerCase()}">${drone.status === 'Active' ? 'Actif' : drone.status === 'Repair' ? 'Réparation' : drone.status === 'Lost' ? 'Perdu' : 'Vendu'}</span>
+      </div>
+    </div>
+    
+    <div class="fpv-card-specs">
+      <div class="spec-line">
+        <span class="spec-key">Carte de vol</span>
+        <span class="spec-val">${drone.fc || 'Non spécifiée'}</span>
+      </div>
+      <div class="spec-line">
+        <span class="spec-key">Module VTX</span>
+        <span class="spec-val">${drone.vtx || 'Non spécifié'}</span>
+      </div>
+      <div class="spec-line">
+        <span class="spec-key">Firmware</span>
+        <span class="spec-val">${drone.firmware || 'Non défini'}</span>
+      </div>
+    </div>
+    
+    <div class="fpv-card-footer">
+      <span class="cost-tag">${drone.cost ? drone.cost + '€' : 'Inconnu'}</span>
+      <span class="text-cyan" style="font-size: 0.8rem; font-weight: 600;">Détails →</span>
+    </div>
+  `;
+
+  // Favorite button action
+  const btnStar = card.querySelector('.btn-favorite-star');
+  btnStar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    drone.favorite = !drone.favorite;
+    FPVDatabase.put('drones', drone).then(() => {
+      refreshCurrentView();
+      showToast(drone.favorite ? "Ajouté aux favoris ⭐" : "Retiré des favoris", "success");
+    });
+  });
+  
+  card.addEventListener('click', () => openDetailsPanel(drone));
+  return card;
+}
+
+function createBatteryCard(batt) {
+  const borderMap = { 'LiPo': 'green', 'LiHV': 'pink', 'LiIon': 'cyan' };
+  const border = borderMap[batt.type] || 'violet';
+  const statusLabel = batt.status === 'Storage' ? 'Stockage' : batt.status === 'Charged' ? 'Chargée' : batt.status === 'Discharged' ? 'Déchargée' : 'Hors Service';
+
+  const card = document.createElement('div');
+  card.className = `fpv-card fpv-card-glow-${border}`;
+  card.innerHTML = `
+    <div class="fpv-card-header">
+      <div>
+        <h3 class="fpv-card-title">${batt.name}</h3>
+        <span class="fpv-card-subtitle">${batt.cells}S - ${batt.capacity}mAh (${batt.type})</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-favorite-star ${batt.favorite ? 'is-favorite' : ''}" stop-propagation>★</button>
+        <span class="badge badge-${batt.status.toLowerCase()}">${statusLabel}</span>
+      </div>
+    </div>
+    
+    <div class="fpv-card-specs">
+      <div class="spec-line">
+        <span class="spec-key">Décharge (C-Rating)</span>
+        <span class="spec-val">${batt.cRating ? batt.cRating + 'C' : 'N/A'}</span>
+      </div>
+      <div class="spec-line">
+        <span class="spec-key">Cycles enregistrés</span>
+        <span class="spec-val" style="font-weight: 700;">${batt.cycles}</span>
+      </div>
+    </div>
+    
+    <div class="fpv-card-footer" style="padding-top: 10px;">
+      <div class="cycles-incrementer" stop-propagation>
+        <button class="cycles-btn btn-minus">-</button>
+        <span class="cycles-value">${batt.cycles} cycles</span>
+        <button class="cycles-btn btn-plus">+</button>
+      </div>
+      <span class="text-cyan text-detail-link" style="font-size: 0.8rem; font-weight: 600; cursor: pointer;">Santé →</span>
+    </div>
+  `;
+
+  // Favorite button action
+  const btnStar = card.querySelector('.btn-favorite-star');
+  btnStar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    batt.favorite = !batt.favorite;
+    FPVDatabase.put('batteries', batt).then(() => {
+      refreshCurrentView();
+      showToast(batt.favorite ? "Ajouté aux favoris ⭐" : "Retiré des favoris", "success");
+    });
+  });
+
+  const btnMinus = card.querySelector('.btn-minus');
+  const btnPlus = card.querySelector('.btn-plus');
+  const cycleText = card.querySelector('.cycles-value');
+
+  btnMinus.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (batt.cycles > 0) {
+      batt.cycles--;
+      saveBatteryCycles(batt, cycleText);
+    }
+  });
+
+  btnPlus.addEventListener('click', (e) => {
+    e.stopPropagation();
+    batt.cycles++;
+    saveBatteryCycles(batt, cycleText);
+  });
+
+  card.querySelector('.cycles-incrementer').addEventListener('click', (e) => e.stopPropagation());
+  card.addEventListener('click', () => openDetailsPanel(batt));
+  return card;
+}
+
+function createProjectCard(proj) {
+  const spent = proj.components.reduce((sum, c) => sum + (c.status === 'Arrived' || c.status === 'Ordered' ? c.price : 0), 0);
+  const totalTasks = proj.checklist.length;
+  const completedTasks = proj.checklist.filter(t => t.completed).length;
+  const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const card = document.createElement('div');
+  card.className = `fpv-card fpv-card-glow-orange`;
+  card.innerHTML = `
+    <div class="fpv-card-header">
+      <div>
+        <h3 class="fpv-card-title">${proj.name}</h3>
+        <span class="fpv-card-subtitle">${proj.status === 'Planning' ? 'Planification' : proj.status === 'In Progress' ? 'Montage' : proj.status === 'Testing' ? 'Bancs de test' : 'Terminé'}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-favorite-star ${proj.favorite ? 'is-favorite' : ''}" stop-propagation>★</button>
+        <span class="badge" style="background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.2);">${pct}%</span>
+      </div>
+    </div>
+
+    <p class="text-muted" style="font-size: 0.85rem; line-height: 1.4; margin: 6px 0 12px 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+      ${proj.description || 'Pas de description.'}
+    </p>
+
+    <div style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+      <div style="width: ${pct}%; background: linear-gradient(90deg, var(--orange) 0%, var(--secondary) 100%); height: 100%; border-radius: 10px; transition: width 0.3s;"></div>
+    </div>
+    
+    <div class="fpv-card-footer">
+      <div style="font-size: 0.8rem;">
+        <span class="spec-key">Investi :</span>
+        <span style="font-weight: 700; color: #fff;">${spent}€</span> 
+        <span class="spec-key">/ Budget :</span>
+        <span style="font-weight: 500; color: var(--text-muted);">${proj.budget}€</span>
+      </div>
+      <span class="text-cyan" style="font-size: 0.8rem; font-weight: 600;">Dossier →</span>
+    </div>
+  `;
+
+  // Favorite button action
+  const btnStar = card.querySelector('.btn-favorite-star');
+  btnStar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    proj.favorite = !proj.favorite;
+    FPVDatabase.put('projects', proj).then(() => {
+      refreshCurrentView();
+      showToast(proj.favorite ? "Ajouté aux favoris ⭐" : "Retiré des favoris", "success");
+    });
+  });
+
+  card.addEventListener('click', () => openDetailsPanel(proj));
+  return card;
+}
+
+function createWishlistCard(item) {
+  const elem = document.createElement('div');
+  elem.className = 'wish-item';
+  const priorityLabel = item.priority === 'High' ? 'Priorité Haute' : item.priority === 'Medium' ? 'Moyenne' : 'Basse';
+
+  elem.innerHTML = `
+    <div class="wish-left">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-favorite-star ${item.favorite ? 'is-favorite' : ''}" style="padding: 0; font-size: 1.15rem;">★</button>
+        <div class="priority-indicator priority-${item.priority}"></div>
+        <span class="wish-title">${item.name}</span>
+      </div>
+      <div class="wish-meta">
+        <span>Catégorie : ${item.category}</span>
+        <span>•</span>
+        <span class="text-${item.priority === 'High' ? 'red' : item.priority === 'Medium' ? 'orange' : 'cyan'}">${priorityLabel}</span>
+      </div>
+      ${item.notes ? `<p class="text-muted" style="font-size: 0.8rem; line-height: 1.3; margin-top: 4px;">${item.notes}</p>` : ''}
+    </div>
+    <div class="wish-right">
+      <span style="font-weight: 800; color: #fff; font-size: 1.15rem;">${item.price}€</span>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+        <button class="btn-small-view btn-wish-edit" style="background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+        <button class="btn-small-view btn-wish-delete" style="background: rgba(239, 68, 68, 0.15); color: var(--red); border-color: rgba(239, 68, 68, 0.3);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+        ${item.link ? `<a href="${item.link}" target="_blank" class="btn-small-view" style="text-decoration: none;">Acheter ↗</a>` : ''}
+        <button class="btn-small-view btn-wish-convert" style="background: rgba(124,77,255,0.12); color: var(--primary); border-color: rgba(124,77,255,0.25);">Convertir</button>
+      </div>
+    </div>
+  `;
+
+  // Favorite button action
+  const btnStar = elem.querySelector('.btn-favorite-star');
+  btnStar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    item.favorite = !item.favorite;
+    FPVDatabase.put('wishlist', item).then(() => {
+      refreshCurrentView();
+      showToast(item.favorite ? "Ajouté aux favoris ⭐" : "Retiré des favoris", "success");
+    });
+  });
+
+  elem.querySelector('.btn-wish-convert').addEventListener('click', () => {
+    convertWishlistItem(item);
+  });
+
+  elem.querySelector('.btn-wish-edit').addEventListener('click', () => {
+    openFormModal('wishlist', item);
+  });
+
+  elem.querySelector('.btn-wish-delete').addEventListener('click', () => {
+    FPVDatabase.delete('wishlist', item.id).then(() => {
+      refreshCurrentView();
+      showToast("Élément supprimé.", "info");
+    });
+  });
+
+  return elem;
+}
+
+function renderFavorites() {
+  const container = document.getElementById('favorites-list-container');
+  const activeSegment = document.querySelector('.segment-btn.active')?.dataset.segment || 'all';
+
+  if (!container) return;
+
+  Promise.all([
+    FPVDatabase.getAll('drones'),
+    FPVDatabase.getAll('batteries'),
+    FPVDatabase.getAll('projects'),
+    FPVDatabase.getAll('wishlist')
+  ]).then(([drones, batteries, projects, wishlist]) => {
+    // Filter favorites
+    const favDrones = drones.filter(d => d.favorite);
+    const favBatteries = batteries.filter(b => b.favorite);
+    const favProjects = projects.filter(p => p.favorite);
+    const favWishlist = wishlist.filter(w => w.favorite);
+
+    const totalCount = favDrones.length + favBatteries.length + favProjects.length + favWishlist.length;
+
+    container.innerHTML = '';
+    
+    if (totalCount === 0) {
+      container.innerHTML = `
+        <div class="info-card" style="grid-column: 1/-1; text-align: center; padding: 40px 20px; border-left: 4px solid var(--primary);">
+          <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Aucun élément favori pour le moment. Cliquez sur l'étoile ★ de vos équipements pour les retrouver ici !</p>
+        </div>
+      `;
+      return;
+    }
+
+    let renderedAny = false;
+
+    // 1. DRONES SECTION
+    if ((activeSegment === 'all' || activeSegment === 'drones') && favDrones.length > 0) {
+      renderedAny = true;
+      const title = document.createElement('h3');
+      title.className = 'favorites-section-header';
+      title.innerHTML = `🛸 Drones Favoris (${favDrones.length})`;
+      container.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+      container.appendChild(grid);
+
+      favDrones.forEach(drone => {
+        const card = createDroneCard(drone);
+        grid.appendChild(card);
+      });
+    }
+
+    // 2. BATTERIES SECTION
+    if ((activeSegment === 'all' || activeSegment === 'batteries') && favBatteries.length > 0) {
+      renderedAny = true;
+      const title = document.createElement('h3');
+      title.className = 'favorites-section-header';
+      title.innerHTML = `🔋 Batteries Favorites (${favBatteries.length})`;
+      container.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+      container.appendChild(grid);
+
+      favBatteries.forEach(batt => {
+        const card = createBatteryCard(batt);
+        grid.appendChild(card);
+      });
+    }
+
+    // 3. PROJECTS SECTION
+    if ((activeSegment === 'all' || activeSegment === 'projects') && favProjects.length > 0) {
+      renderedAny = true;
+      const title = document.createElement('h3');
+      title.className = 'favorites-section-header';
+      title.innerHTML = `⚙️ Projets Favoris (${favProjects.length})`;
+      container.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+      container.appendChild(grid);
+
+      favProjects.forEach(proj => {
+        const card = createProjectCard(proj);
+        grid.appendChild(card);
+      });
+    }
+
+    // 4. WISHLIST SECTION
+    if ((activeSegment === 'all' || activeSegment === 'wishlist') && favWishlist.length > 0) {
+      renderedAny = true;
+      const title = document.createElement('h3');
+      title.className = 'favorites-section-header';
+      title.innerHTML = `💖 Wishlist Favorite (${favWishlist.length})`;
+      container.appendChild(title);
+
+      const listContainer = document.createElement('div');
+      listContainer.style.display = 'flex';
+      listContainer.style.flexDirection = 'column';
+      listContainer.style.gap = '10px';
+      container.appendChild(listContainer);
+
+      favWishlist.forEach(item => {
+        const elem = createWishlistCard(item);
+        listContainer.appendChild(elem);
+      });
+    }
+
+    if (!renderedAny) {
+      container.innerHTML = `
+        <div class="info-card" style="grid-column: 1/-1; text-align: center; padding: 40px 20px; border-left: 4px solid var(--primary);">
+          <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Aucun élément dans cette catégorie de favoris.</p>
+        </div>
+      `;
+    }
+  });
+}
+
+

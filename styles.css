@@ -1371,3 +1371,75 @@ body {
 #reader video {
   object-fit: cover !important;
 }
+
+/* ==========================================================================
+   FAVORITES SECTION & STAR BUTTON STYLING
+   ========================================================================== */
+.btn-favorite-star {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-favorite-star:hover {
+  transform: scale(1.2);
+  color: rgba(255, 255, 255, 0.6);
+}
+.btn-favorite-star.is-favorite {
+  color: #facc15 !important;
+  filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.5));
+  transform: scale(1.1);
+}
+
+.segmented-control {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+}
+.segment-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.segment-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
+}
+.segment-btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(124, 77, 255, 0.3);
+}
+
+.favorites-section-header {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 24px 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid var(--primary);
+  padding-left: 10px;
+}
+

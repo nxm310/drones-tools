@@ -96,6 +96,24 @@
         </div>
       </section>
 
+      <!-- VIEW: FAVORITES -->
+      <section id="view-favorites" class="app-view">
+        <div class="view-header-summary" style="margin-bottom: 20px;">
+          <!-- Premium Segmented Control (iOS style) -->
+          <div class="segmented-control">
+            <button class="segment-btn active" data-segment="all">★ Tous</button>
+            <button class="segment-btn" data-segment="drones">🛸 Drones</button>
+            <button class="segment-btn" data-segment="batteries">🔋 Batteries</button>
+            <button class="segment-btn" data-segment="projects">⚙️ Projets</button>
+            <button class="segment-btn" data-segment="wishlist">💖 Wishlist</button>
+          </div>
+        </div>
+
+        <div id="favorites-list-container" style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Dynamically populated grouped lists -->
+        </div>
+      </section>
+
       <!-- VIEW: DRONES (FLOTTE) -->
       <section id="view-drones" class="app-view">
         <div class="view-header-summary">
@@ -321,7 +339,7 @@
           <div class="settings-card info-card">
             <h2>À propos de FPV Manager</h2>
             <p>Conçu pour les pilotes exigeants. Permet un suivi précis de vos cycles LiPo/LiIon, stocke vos factures pour les assurances en cas de perte de drone, et permet de configurer vos builds méthodiquement.</p>
-            <div class="app-version-badge">Version 2.6.0 (PWA)</div>
+            <div class="app-version-badge">Version 2.7.0 (PWA)</div>
           </div>
         </div>
       </section>
@@ -333,6 +351,10 @@
       <a href="#home" id="tab-home" class="tab-item active">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         <span class="tab-label">Accueil</span>
+      </a>
+      <a href="#favorites" id="tab-favorites" class="tab-item">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <span class="tab-label">Favoris</span>
       </a>
       <a href="#drones" id="tab-drones" class="tab-item">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -349,7 +371,6 @@
       <a href="#wishlist" id="tab-wishlist" class="tab-item">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
         <span class="tab-label">Wishlist</span>
-      </a>
       </a>
     </nav>
   </div>
@@ -464,7 +485,7 @@
 
   <!-- Service Worker and PWA Version Checker (Bypasses iOS Caches) -->
   <script>
-    const CURRENT_VERSION = '2.6.0';
+    const CURRENT_VERSION = '2.7.0';
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
