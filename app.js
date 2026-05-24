@@ -189,7 +189,15 @@ function setupEventListeners() {
 
   // Modal open (Add new entity)
   btnAddQuick.addEventListener('click', () => {
-    openFormModal(currentView === 'settings' ? 'drone' : currentView.replace(/s$/, '')); // Map 'drones' to 'drone' etc.
+    const viewToEntity = {
+      'drones': 'drone',
+      'batteries': 'battery',
+      'projects': 'project',
+      'wishlist': 'wishlist',
+      'settings': 'drone'
+    };
+    const entityType = viewToEntity[currentView] || 'drone';
+    openFormModal(entityType);
   });
 
   // Modal close
@@ -1072,7 +1080,7 @@ function renderEntityDetails(entity) {
   container.innerHTML = '';
 
   // 1. DRONE DETAILS
-  if (entityType === 'dron') {
+  if (entityType === 'drone') {
     // Parse Betaflight config
     const parsedCli = BetaflightParser.parse(entity.betaflightConfig);
     const parsedCliHTML = BetaflightParser.renderHTML(parsedCli);
