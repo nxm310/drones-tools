@@ -1,9 +1,9 @@
 {
-  "version": "2.7.0",
+  "version": "2.8.0",
   "changelog": [
-    "⭐ NOUVEAUTÉ : Système de Favoris (étoiles dorées) disponible dans toutes les sections !",
-    "📈 Tri intelligent : Les favoris s'affichent automatiquement en toute tête de liste.",
-    "📱 Onglet Favoris dédié avec sélecteur de segments iOS (Tous, Drones, Lipo, Projets, Wishlist).",
-    "☁️ Synchronisation Cloud instantanée de votre statut favori sur tous vos appareils."
+    "📸 NOUVEAUTÉ : Importation de photos pour chaque drone et chaque batterie !",
+    "⚙️ Compression Intelligente : Redimensionnement automatique à 500px et compression 70% JPEG côté client.",
+    "📱 Prise de vue native : Support de l'appareil photo en direct et de votre galerie d'images.",
+    "🖼️ Rendu premium : Affichage de miniatures dans les listes et de bannières de couverture dans les détails."
   ]
 }

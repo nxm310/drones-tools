@@ -330,6 +330,20 @@ function openFormModal(entityType, entityData = null) {
         <textarea id="f-cli" class="form-control form-control-textarea textarea-cli" placeholder="Coller le dump ou le diff CLI de Betaflight ici pour analyser automatiquement votre setup...">${entityData?.betaflightConfig || ''}</textarea>
       </div>
       <div class="form-group">
+        <label>Photo de l'appareil (Optionnelle)</label>
+        <div style="display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--surface-border); padding: 12px; border-radius: 12px;">
+          <div id="image-upload-preview" style="width: 64px; height: 64px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+            ${entityData?.image ? `<img src="${entityData.image}" style="width: 100%; height: 100%; object-fit: cover;" />` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`}
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('f-image-file').click()" style="padding: 8px 12px; font-size: 0.8rem; border: 1px solid var(--surface-border); margin: 0; align-self: flex-start;">Choisir une photo...</button>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Caméra ou galerie photo</span>
+            <input type="file" id="f-image-file" accept="image/*" style="display: none;" onchange="handleFormImageUpload(event)" />
+            <input type="hidden" id="f-image-data" value="${entityData?.image || ''}" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
         <label for="f-notes">Notes complémentaires</label>
         <textarea id="f-notes" class="form-control form-control-textarea" placeholder="Entrez vos réglages PID particuliers, hélices fétiches ou réparations...">${entityData?.notes || ''}</textarea>
       </div>
@@ -395,6 +409,20 @@ function openFormModal(entityType, entityData = null) {
       <div class="form-group">
         <label for="f-date">Date d'achat</label>
         <input type="date" id="f-date" class="form-control" value="${entityData?.purchaseDate || ''}">
+      </div>
+      <div class="form-group">
+        <label>Photo du pack (Optionnelle)</label>
+        <div style="display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--surface-border); padding: 12px; border-radius: 12px;">
+          <div id="image-upload-preview" style="width: 64px; height: 64px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+            ${entityData?.image ? `<img src="${entityData.image}" style="width: 100%; height: 100%; object-fit: cover;" />` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`}
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('f-image-file').click()" style="padding: 8px 12px; font-size: 0.8rem; border: 1px solid var(--surface-border); margin: 0; align-self: flex-start;">Choisir une photo...</button>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Caméra ou galerie photo</span>
+            <input type="file" id="f-image-file" accept="image/*" style="display: none;" onchange="handleFormImageUpload(event)" />
+            <input type="hidden" id="f-image-data" value="${entityData?.image || ''}" />
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label for="f-notes">Notes de santé de la batterie</label>
@@ -583,6 +611,12 @@ function handleFormSubmit(e) {
       newItem.category = document.getElementById('f-category').value;
       newItem.link = document.getElementById('f-link').value;
       newItem.notes = document.getElementById('f-notes').value;
+    }
+
+    // Image capture if present (optional)
+    const imgInput = document.getElementById('f-image-data');
+    if (imgInput) {
+      newItem.image = imgInput.value;
     }
 
     // Save in IndexedDB
@@ -920,6 +954,11 @@ function renderEntityDetails(entity) {
     }
 
     container.innerHTML = `
+      ${entity.image ? `
+        <div style="width: 100%; height: 160px; border-radius: 16px; overflow: hidden; margin-bottom: 16px; border: 1px solid var(--surface-border); box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-shrink: 0;">
+          <img src="${entity.image}" style="width: 100%; height: 100%; object-fit: cover;" alt="${entity.name}" />
+        </div>
+      ` : ''}
       <div class="detail-banner">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -1035,6 +1074,11 @@ function renderEntityDetails(entity) {
     }
 
     container.innerHTML = `
+      ${entity.image ? `
+        <div style="width: 100%; height: 160px; border-radius: 16px; overflow: hidden; margin-bottom: 16px; border: 1px solid var(--surface-border); box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-shrink: 0;">
+          <img src="${entity.image}" style="width: 100%; height: 100%; object-fit: cover;" alt="${entity.name}" />
+        </div>
+      ` : ''}
       <div class="detail-banner" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%); border-color: rgba(16, 185, 129, 0.3);">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -1873,12 +1917,13 @@ function createDroneCard(drone) {
   const card = document.createElement('div');
   card.className = `fpv-card fpv-card-glow-violet`;
   card.innerHTML = `
-    <div class="fpv-card-header">
-      <div>
-        <h3 class="fpv-card-title">${drone.name}</h3>
-        <span class="fpv-card-subtitle">${drone.frame || 'Châssis générique'}</span>
+    <div class="fpv-card-header" style="display: flex; align-items: center; gap: 12px;">
+      ${drone.image ? `<img src="${drone.image}" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;" alt="${drone.name}" />` : ''}
+      <div style="flex: 1; min-width: 0;">
+        <h3 class="fpv-card-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${drone.name}</h3>
+        <span class="fpv-card-subtitle" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${drone.frame || 'Châssis générique'}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
         <button class="btn-favorite-star ${drone.favorite ? 'is-favorite' : ''}" stop-propagation>★</button>
         <span class="badge badge-${drone.status.toLowerCase()}">${drone.status === 'Active' ? 'Actif' : drone.status === 'Repair' ? 'Réparation' : drone.status === 'Lost' ? 'Perdu' : 'Vendu'}</span>
       </div>
@@ -1928,12 +1973,13 @@ function createBatteryCard(batt) {
   const card = document.createElement('div');
   card.className = `fpv-card fpv-card-glow-${border}`;
   card.innerHTML = `
-    <div class="fpv-card-header">
-      <div>
-        <h3 class="fpv-card-title">${batt.name}</h3>
-        <span class="fpv-card-subtitle">${batt.cells}S - ${batt.capacity}mAh (${batt.type})</span>
+    <div class="fpv-card-header" style="display: flex; align-items: center; gap: 12px;">
+      ${batt.image ? `<img src="${batt.image}" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;" alt="${batt.name}" />` : ''}
+      <div style="flex: 1; min-width: 0;">
+        <h3 class="fpv-card-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${batt.name}</h3>
+        <span class="fpv-card-subtitle" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${batt.cells}S - ${batt.capacity}mAh (${batt.type})</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
         <button class="btn-favorite-star ${batt.favorite ? 'is-favorite' : ''}" stop-propagation>★</button>
         <span class="badge badge-${batt.status.toLowerCase()}">${statusLabel}</span>
       </div>
@@ -2223,5 +2269,62 @@ function renderFavorites() {
     }
   });
 }
+
+/* ==========================================================================
+   CLIENTSIDE CANVAS PHOTO COMPRESSION UTILITY (MAX 500x500px, 70% JPEG)
+   ========================================================================== */
+window.handleFormImageUpload = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 500;
+      const MAX_HEIGHT = 500;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Compress to JPEG at 70% quality (ideal weight/quality ratio for mobile screens)
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+      // Store in hidden field
+      const hiddenInput = document.getElementById('f-image-data');
+      if (hiddenInput) {
+        hiddenInput.value = compressedDataUrl;
+      }
+      
+      // Update form visual preview
+      const preview = document.getElementById('image-upload-preview');
+      if (preview) {
+        preview.innerHTML = `<img src="${compressedDataUrl}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+      }
+      
+      showToast("Photo importée et compressée avec succès !", "success");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
 
 
