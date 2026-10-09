@@ -9,11 +9,77 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(() => {
       initApp();
       refreshAllViews();
+      initMacSync();
     })
     .catch(err => {
       showToast("Erreur de base de données : " + err.message, "error");
     });
 });
+
+let syncMacTimeout = null;
+
+function syncToMacServer() {
+  clearTimeout(syncMacTimeout);
+  syncMacTimeout = setTimeout(() => {
+    Promise.all([
+      FPVDatabase.getAll('drones'),
+      FPVDatabase.getAll('batteries'),
+      FPVDatabase.getAll('projects'),
+      FPVDatabase.getAll('wishlist')
+    ]).then(([drones, batteries, projects, wishlist]) => {
+      const payload = {
+        drones,
+        batteries,
+        projects,
+        wishlist,
+        savedAt: new Date().toISOString()
+      };
+      fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(e => console.warn('Sync Mac offline', e));
+    }).catch(e => console.warn('Sync read err', e));
+  }, 1000);
+}
+
+function initMacSync() {
+  fetch('/api/data')
+    .then(r => r.json())
+    .then(serverData => {
+      if (serverData && serverData.exists !== false && Array.isArray(serverData.drones)) {
+        Promise.all([
+          FPVDatabase.getAll('drones'),
+          FPVDatabase.getAll('batteries')
+        ]).then(([drones, batteries]) => {
+          if (drones.length === 0 && batteries.length === 0 && (serverData.drones.length > 0 || serverData.batteries.length > 0)) {
+            FPVDatabase.clearAll().then(() => {
+              const promises = [];
+              if (serverData.drones) serverData.drones.forEach(d => promises.push(FPVDatabase.put('drones', d)));
+              if (serverData.batteries) serverData.batteries.forEach(b => promises.push(FPVDatabase.put('batteries', b)));
+              if (serverData.projects) serverData.projects.forEach(p => promises.push(FPVDatabase.put('projects', p)));
+              if (serverData.wishlist) serverData.wishlist.forEach(w => promises.push(FPVDatabase.put('wishlist', w)));
+              return Promise.all(promises);
+            }).then(() => {
+              refreshAllViews();
+              console.log('Restauré depuis le Mac Mini M1 !');
+            });
+          } else {
+            syncToMacServer();
+          }
+        });
+      } else {
+        syncToMacServer();
+      }
+    })
+    .catch(() => {});
+
+  const prevCallback = FPVDatabase.onSyncCallback;
+  FPVDatabase.onSyncCallback = (action, storeName, item) => {
+    if (typeof prevCallback === 'function') prevCallback(action, storeName, item);
+    syncToMacServer();
+  };
+}
 
 // Global state variables
 let currentView = 'home';

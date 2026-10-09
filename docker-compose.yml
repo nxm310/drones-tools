@@ -5,6 +5,10 @@ services:
     restart: unless-stopped
     ports:
       - "8083:80"
+    environment:
+      - PORT=80
+    volumes:
+      - ./data:/app/data
     labels:
       - "gethomepage.name=Drones Tools"
       - "gethomepage.description=Gestion de flotte & télémétrie Betaflight"

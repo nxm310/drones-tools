@@ -8,6 +8,7 @@ LOCAL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "📦 [1/2] Synchronisation vers le Mac M1 ($REMOTE_DIR)..."
 rsync -avz \
     --exclude '.git' \
+    --exclude 'data' \
     "$LOCAL_DIR/" "$REMOTE_HOST:$REMOTE_DIR/"
 
 echo "🐳 [2/2] Rechargement du conteneur Drones Tools sur OrbStack..."
