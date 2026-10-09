@@ -1639,9 +1639,9 @@ function importDatabase(e) {
         })
         .then(() => {
           statusMsg.className = 'import-status-msg import-success';
-          statusMsg.textContent = `Restauration réussie ! ${parsed.drones.length} drones, ${parsed.batteries.length} batteries importés.`;
           refreshAllViews();
-          showToast("Données restaurées !", "success");
+          syncToMacServer();
+          showToast("Données restaurées et sauvegardées sur Mac M1 !", "success");
           
           // Clear input
           e.target.value = '';
