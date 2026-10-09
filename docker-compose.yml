@@ -1,0 +1,14 @@
+services:
+  drones-tools:
+    build: .
+    container_name: drones-tools
+    restart: unless-stopped
+    ports:
+      - "8083:80"
+    labels:
+      - "gethomepage.name=Drones Tools"
+      - "gethomepage.description=Gestion de flotte & télémétrie Betaflight"
+      - "gethomepage.group=Outils & Loisirs"
+      - "gethomepage.icon=http://192.168.50.174:8083/drones-logo.svg"
+      - "gethomepage.href=http://192.168.50.174:8083"
+      - "gethomepage.ping=http://192.168.50.174:8083"
